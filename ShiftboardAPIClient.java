@@ -30,11 +30,11 @@ public class ShiftboardAPIClient {
         
         System.out.println(jsonString);
     }
-    
+
     private static String getAPIKey() {
         return "Your Shiftboard API key";
     }
-    
+
     private static String getSignatureKey() {
         return "Your Shiftboard API signature key -- keep this very protected";
     }
@@ -53,8 +53,17 @@ public class ShiftboardAPIClient {
         String signatureBits = "method" + method + "params" + params;
         String signature = hmacSha1(signatureBits, signatureKey);
 
-        // Assemble the URL
-        String url = "https://api.shiftdata.com/api/api.cgi?jsonrpc=2.0"
+        // Assemble the URL for GET
+//        String url = "https://api.shiftdata.com/api/api.cgi?jsonrpc=2.0"
+//            + "&access_key_id=" + apiKey
+//            + "&method=" + method
+//            + "&params=" + paramsEncoded
+//            + "&signature=" + signature
+//            + "&id=1";
+
+        // Assemble the URL for POST
+        String url = "https://api.shiftdata.com/api/api.cgi";
+        String urlParams = "jsonrpc=2.0"
             + "&access_key_id=" + apiKey
             + "&method=" + method
             + "&params=" + paramsEncoded
@@ -63,7 +72,8 @@ public class ShiftboardAPIClient {
 
         String results;
         try {
-            results = fetchURL(url);
+            //results = getURL(url);
+            results = postURL(url, urlParams);
         }
         catch (Exception e) {
             throw new RuntimeException(e);
@@ -91,9 +101,32 @@ public class ShiftboardAPIClient {
         }
     }
     
-    public static String fetchURL(String urlString) throws Exception {
+    public static String getURL(String urlString, String urlParams) throws Exception {
         URL url = new URL(urlString);
-        URLConnection conn = url.openConnection();
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        BufferedReader in = new BufferedReader(
+            new InputStreamReader( conn.getInputStream() )
+        );
+
+        String inputLine;
+        String output = "";
+        while ((inputLine = in.readLine()) != null) {
+            output = output.concat(inputLine);
+        }
+        in.close();
+
+        return output;
+    }
+
+    public static String postURL(String urlString, String urlParams) throws Exception {
+        URL url = new URL(urlString);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setDoOutput(true);
+        DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
+        wr.writeBytes(urlParams);
+        wr.flush();
+        wr.close();
         BufferedReader in = new BufferedReader(
             new InputStreamReader( conn.getInputStream() )
         );
